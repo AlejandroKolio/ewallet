@@ -1,0 +1,271 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: E-Wallet
+
+servers:
+  - url: http://localhost:8080
+paths:
+  /transactions:
+    post:
+      summary: Transfer money from account to account
+      operationId: createTransaction
+      tags:
+        - transactions
+      responses:
+        '201':
+          description: Transaction response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+    get:
+      summary: List all Transactions
+      operationId: getTransactions
+      tags:
+        - transactions
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: A paged array of transactions
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transactions"
+        '500':
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+
+  /transactions/{transactionId}:
+    get:
+      summary: Info about specific transaction
+      operationId: getTransactionById
+      tags:
+        - transactions
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          description: The unique transaction id to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /accounts:
+    get:
+      summary: List all Accounts
+      operationId: getAccounts
+      tags:
+        - accounts
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: A paged array of accounts
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Accounts"
+        '500':
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Create an Account
+      operationId: createAccount
+      tags:
+        - accounts
+      responses:
+        '201':
+          description: Account response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        '400':
+          description: |
+            - code Wrong format input.
+              - Description: bad request
+            - code Resourse is unknown or not found.
+              - Description: resourse not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /accounts/{accountId}:
+    get:
+      summary: Info for a specific account
+      operationId: getAccountById
+      tags:
+        - accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The id of the account to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        '404':
+          description: |
+            - code Account is not found.
+              - Description: Account with provided id is not found
+            - status Resourse is unknown or not found.
+              - Description: resourse not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Update Account's username
+      operationId: updateAccount
+      tags:
+        - accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The id of the account to retrieve
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Expected to have an updated username
+
+        '404':
+          description: |
+            - code Account is not found.
+              - Description: Account with provided id is not found
+            - status Resourse is unknown or not found.
+              - Description: resourse not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Transaction:
+      type: object
+      required:
+        - fromAccountId
+        - toAccountId
+        - amount
+        - currency
+      properties:
+        fromAccountId:
+          type: string
+        toAccountId:
+          type: string
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+          enum:
+            - USD
+            - EUR
+            - RUB
+    Account:
+      type: object
+      required:
+        - username
+        - balance
+        - currency
+      properties:
+        accountId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        balance:
+          type: number
+          format: double
+        currency:
+          type: string
+          enum:
+            - USD
+            - EUR
+            - RUB
+    Accounts:
+      type: array
+      items:
+        $ref: "#/components/schemas/Account"
+    Error:
+      type: object
+      required:
+        - code
+        - status
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        status:
+          type: string
+        message:
+          type: string
+    Transactions:
+      type: array
+      items:
+        $ref: "#/components/schemas/Transaction"
