@@ -11,47 +11,55 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
-import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/**
- * @author Alexander Shakhov
- */
 @Slf4j
 @ExtendWith(VertxExtension.class)
-public class AccountsApi_IT {
+public class FullTest {
     private static final int PORT = 8080;
     @NonNull
     private static final String HOST = "localhost";
     @NonNull
-    private Faker faker;
+    private static Faker faker;
     @NonNull
-    private WebClient client;
-    @NonNull
-    private Vertx vertx;
-    @NonNull
-    private VertxTestContext context;
+    private static WebClient client;
 
-    @BeforeEach
-    void setUp() {
-        vertx = Vertx.vertx();
+    @BeforeAll
+    @DisplayName("Deploy a verticle")
+    static void prepare(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+        vertx.deployVerticle(new WebServer(), testContext.completing());
         client = WebClient.create(vertx);
-        context = new VertxTestContext();
-        vertx.deployVerticle(new WebServer(), context.completing());
         faker = Faker.instance();
     }
 
-    @RepeatedTest(3)
-    @Timeout(value = 5, timeUnit = TimeUnit.SECONDS)
-    void createSeveralAccounts(@NonNull VertxTestContext testContext) {
+    @AfterEach
+    @DisplayName("Check if not down")
+    void checkIfAlive(Vertx vertx) {
+        assertThat(vertx.deploymentIDs()).asList().hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Let's create Account #1")
+    void createAccountTest(@NonNull VertxTestContext testContext) {
+        createAccount(testContext);
+    }
+
+    @Test
+    @DisplayName("Let's get Account #1")
+    void getAccount(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+        testContext.completeNow();
+    }
+
+    private void createAccount(@NonNull VertxTestContext testContext) {
         client.post(PORT, HOST, "/accounts")
                 .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
                 .as(BodyCodec.string())
@@ -70,6 +78,7 @@ public class AccountsApi_IT {
                         testContext.failNow(testContext.causeOfFailure());
                     }
                 });
+        testContext.completeNow();
     }
 
     private JsonObject accountBuilder() {
