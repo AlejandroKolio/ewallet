@@ -93,10 +93,11 @@ public class AccountService {
             final Account account = Json.decodeValue(bodyAsString, Account.class);
             final Optional<Account> any = repository.getAccounts()
                     .stream()
-                    .filter(a -> a.getUsername().equals(account.getUsername()))
+                    .filter(a -> a.getUsername().equals(account.getUsername())
+                            && a.getCurrency().equals(account.getCurrency()))
                     .findAny();
 
-            if (any.isPresent() && any.get().getCurrency().equals(account.getCurrency())) {
+            if (any.isPresent()) {
                 context.fail(ErrorCodes.BAD_REQUEST.getCode(), new DuplicateAccountException(
                         String.format("Account with name '%s' and currency '%s' is already exsist",
                                 account.getUsername(), account.getCurrency())));
