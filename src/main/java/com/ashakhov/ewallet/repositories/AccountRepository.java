@@ -1,7 +1,6 @@
-package com.ashakhov.ewallet.repositories.nodb;
+package com.ashakhov.ewallet.repositories;
 
 import com.ashakhov.ewallet.models.Account;
-import com.ashakhov.ewallet.repositories.BankRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;

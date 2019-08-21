@@ -1,13 +1,9 @@
-package com.ashakhov.ewallet.repositories.nodb;
+package com.ashakhov.ewallet.repositories;
 
 import com.ashakhov.ewallet.models.Transaction;
-import com.ashakhov.ewallet.repositories.BankRepository;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.PriorityBlockingQueue;
 import lombok.Getter;
 import lombok.NonNull;
 
