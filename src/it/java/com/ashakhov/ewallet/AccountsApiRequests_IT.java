@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class AccountsApiRequests_IT {
     private static final int PORT = 8080;
+    public static final String HOST = "localhost";
     @NonNull
     private Vertx vertx;
     @NonNull
@@ -62,7 +63,7 @@ public class AccountsApiRequests_IT {
         final String json = Json.encodePrettily(obj);
         final String length = Integer.toString(json.length());
         vertx.createHttpClient()
-                .post(PORT, "localhost", "/accounts")
+                .post(PORT, HOST, "/accounts")
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .putHeader(HttpHeaders.CONTENT_LENGTH, length)
                 .handler(response -> {
