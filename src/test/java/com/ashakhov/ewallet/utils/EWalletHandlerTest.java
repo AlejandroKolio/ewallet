@@ -9,7 +9,6 @@ import com.ashakhov.ewallet.models.CurrencyCode;
 import java.util.stream.Stream;
 import lombok.NonNull;
 import org.assertj.core.data.Percentage;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -18,12 +17,6 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @author Alexander Shakhov
  */
 public class EWalletHandlerTest {
-
-    @Test
-    public void readSqlFromFileTest() {
-        final String sqlScript = EWalletHandler.getSqlScript("create_tables.sql");
-        assertThat(sqlScript).isNotBlank();
-    }
 
     @ParameterizedTest()
     @MethodSource("testData")
@@ -34,7 +27,7 @@ public class EWalletHandlerTest {
 
     private static Stream<Arguments> testData() {
         return Stream.of(
-                Arguments.of(20.0, USD, RUB, 1329.78),
+                Arguments.of(20.0, USD, RUB, 1314.35),
                 Arguments.of(20.0, USD, EUR, 18.02),
                 Arguments.of(20.0, USD, USD, 20.0),
                 Arguments.of(20.0, EUR, RUB, 1476.73),
