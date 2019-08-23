@@ -6,6 +6,7 @@ import com.ashakhov.ewallet.models.Account;
 import com.ashakhov.ewallet.models.CurrencyCode;
 import com.ashakhov.ewallet.models.Status;
 import com.ashakhov.ewallet.models.Transaction;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.javafaker.Faker;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;
@@ -15,6 +16,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import java.util.List;
 import java.util.Random;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -46,11 +48,21 @@ public class TransactionsApiRequests_IT {
         vertx.close(context.completing());
     }
 
-    @DisplayName("Transaction Test")
+    @Test
+    public void webServerStartAndListenOnPortTest(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+        final WebClient client = WebClient.create(vertx);
+        client.get(PORT, HOST, "/accounts")
+                .as(BodyCodec.string())
+                .send(testContext.succeeding(response -> testContext.verify(() -> {
+                    assertThat(response.body()).isEqualTo("[]");
+                    testContext.completeNow();
+                })));
+    }
+
+    @DisplayName("Create Transaction")
     @RepeatedTest(value = 5, name = "Create Accounts from/to and Transfer money")
     public void creteTransactionTest(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
         final WebClient client = WebClient.create(vertx);
-
         // 1. Account from
         final JsonObject jsonFrom = accountBuilder();
         client.post(PORT, HOST, "/accounts")
@@ -62,7 +74,7 @@ public class TransactionsApiRequests_IT {
                     Assertions.assertThat(from.getUsername()).isNotBlank();
                     Assertions.assertThat(from.getBalance()).isNotNegative();
                     Assertions.assertThat(from.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
-                    log.info("From Account: {}", from.toString());
+                    log.info("\nFrom Account: {}", from.toString());
 
                     // 1. Account to
                     final JsonObject jsonTo = accountBuilder();
@@ -75,7 +87,7 @@ public class TransactionsApiRequests_IT {
                                 Assertions.assertThat(to.getUsername()).isNotBlank();
                                 Assertions.assertThat(to.getBalance()).isNotNegative();
                                 Assertions.assertThat(to.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
-                                log.info("To Account: {}", to.toString());
+                                log.info("\nTo Account: {}", to.toString());
 
                                 // 3. Transaction
                                 final JsonObject jsonTransaction = transactionBuilder(from, to);
@@ -95,32 +107,160 @@ public class TransactionsApiRequests_IT {
                                                             .isEqualTo(Status.SUCCESS);
                                                     Assertions.assertThat(transaction.getMessage())
                                                             .isEqualTo("Transaction successfully complete");
-                                                    log.info("Transaction: {}", transaction.toString());
-                                                    testContext.completeNow();
+                                                    log.info("\nTransaction: {}", transaction.toString());
+
+                                                    // 4. Check we've withdraw the entire sum from the account.
+                                                    client.get(PORT, HOST, "/accounts/" + from.getAccountId())
+                                                            .as(BodyCodec.string())
+                                                            .send(testContext.succeeding(response4 -> testContext.verify(() -> {
+                                                                final Account accountFrom = Json.decodeValue(
+                                                                        response4.body(), Account.class);
+                                                                Assertions.assertThat(accountFrom.getBalance()).isEqualTo(0.0);
+                                                                log.info("\nWithdrawn balance: {}", accountFrom.getBalance());
+
+                                                                // 5. Check we've deposit and convert sum to the target Account and balance is changed.
+                                                                client.get(PORT, HOST, "/accounts/" + to.getAccountId())
+                                                                        .as(BodyCodec.string())
+                                                                        .send(testContext.succeeding(response5 -> testContext.verify(() -> {
+                                                                            final Account accountTo = Json.decodeValue(response5.body(), Account.class);
+                                                                            Assertions.assertThat(accountTo.getBalance()).isNotNull();
+                                                                            log.info("\nDeposit balance: {}", accountTo.toString());
+                                                                            testContext.completeNow();
+                                                                        })));
+                                                            })));
                                                 })));
-                                testContext.completeNow();
                             })));
                 })));
     }
 
     @Test
-    public void webServerStartAndListenOnPortTest(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+    @DisplayName("Get All Transactions")
+    public void getAllTransactions(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
         final WebClient client = WebClient.create(vertx);
-        client.get(PORT, HOST, "/accounts")
+        // 1. Account from
+        final JsonObject jsonFrom = accountBuilder();
+        client.post(PORT, HOST, "/accounts")
+                .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
                 .as(BodyCodec.string())
-                .send(testContext.succeeding(response -> testContext.verify(() -> {
-                    assertThat(response.body()).isEqualTo("[]");
-                    testContext.completeNow();
+                .sendJsonObject(jsonFrom, testContext.succeeding(response1 -> testContext.verify(() -> {
+                    final Account from = Json.decodeValue(response1.body(), Account.class);
+                    Assertions.assertThat(from.getAccountId()).isNotBlank();
+                    Assertions.assertThat(from.getUsername()).isNotBlank();
+                    Assertions.assertThat(from.getBalance()).isNotNegative();
+                    Assertions.assertThat(from.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
+                    log.info("\nFrom Account: {}", from.toString());
+
+                    // 1. Account to
+                    final JsonObject jsonTo = accountBuilder();
+                    client.post(PORT, HOST, "/accounts")
+                            .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                            .as(BodyCodec.string())
+                            .sendJsonObject(jsonTo, testContext.succeeding(response2 -> testContext.verify(() -> {
+                                final Account to = Json.decodeValue(response2.body(), Account.class);
+                                Assertions.assertThat(to.getAccountId()).isNotBlank();
+                                Assertions.assertThat(to.getUsername()).isNotBlank();
+                                Assertions.assertThat(to.getBalance()).isNotNegative();
+                                Assertions.assertThat(to.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
+                                log.info("\nTo Account: {}", to.toString());
+
+                                // 3. Transaction
+                                final JsonObject jsonTransaction = transactionBuilder(from, to);
+                                client.post(PORT, HOST, "/transactions")
+                                        .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                                        .sendJsonObject(jsonTransaction,
+                                                testContext.succeeding(response3 -> testContext.verify(() -> {
+                                                    final Transaction transaction = Json.decodeValue(response3.body(),
+                                                            Transaction.class);
+                                                    Assertions.assertThat(transaction.getTransactionId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getFromAccountId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getToAccountId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getAmount()).isNotNull();
+                                                    Assertions.assertThat(transaction.getCurrency()).isNotNull();
+                                                    Assertions.assertThat(transaction.getCreatedOn()).isNotNull();
+                                                    Assertions.assertThat(transaction.getStatus())
+                                                            .isEqualTo(Status.SUCCESS);
+                                                    Assertions.assertThat(transaction.getMessage())
+                                                            .isEqualTo("Transaction successfully complete");
+                                                    log.info("\nTransaction: {}", transaction.toString());
+
+                                                    // 4. Get all Transactions.
+                                                    client.get(PORT, HOST, "/transactions")
+                                                            .as(BodyCodec.string())
+                                                            .send(testContext.succeeding(response4 -> testContext.verify(() -> {
+                                                                final List<Transaction> transactions = Json.decodeValue(
+                                                                        response4.body(), new TypeReference<List<Transaction>>() {});
+                                                                assertThat(transactions).isNotEmpty();
+                                                                log.info(transactions.toString());
+                                                                testContext.completeNow();
+                                                            })));
+                                                })));
+                            })));
                 })));
     }
 
     @Test
-    public void getAllTransactions() {
+    @DisplayName("Get Transaction by Id")
+    public void getTransactionByTransactionIdTest(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+        final WebClient client = WebClient.create(vertx);
+        // 1. Account from
+        final JsonObject jsonFrom = accountBuilder();
+        client.post(PORT, HOST, "/accounts")
+                .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                .as(BodyCodec.string())
+                .sendJsonObject(jsonFrom, testContext.succeeding(response1 -> testContext.verify(() -> {
+                    final Account from = Json.decodeValue(response1.body(), Account.class);
+                    Assertions.assertThat(from.getAccountId()).isNotBlank();
+                    Assertions.assertThat(from.getUsername()).isNotBlank();
+                    Assertions.assertThat(from.getBalance()).isNotNegative();
+                    Assertions.assertThat(from.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
+                    log.info("\nFrom Account: {}", from.toString());
 
-    }
+                    // 1. Account to
+                    final JsonObject jsonTo = accountBuilder();
+                    client.post(PORT, HOST, "/accounts")
+                            .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                            .as(BodyCodec.string())
+                            .sendJsonObject(jsonTo, testContext.succeeding(response2 -> testContext.verify(() -> {
+                                final Account to = Json.decodeValue(response2.body(), Account.class);
+                                Assertions.assertThat(to.getAccountId()).isNotBlank();
+                                Assertions.assertThat(to.getUsername()).isNotBlank();
+                                Assertions.assertThat(to.getBalance()).isNotNegative();
+                                Assertions.assertThat(to.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
+                                log.info("\nTo Account: {}", to.toString());
 
-    @Test
-    public void getTransactionByTransactionIdTest() {
+                                // 3. Transaction
+                                final JsonObject jsonTransaction = transactionBuilder(from, to);
+                                client.post(PORT, HOST, "/transactions")
+                                        .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                                        .sendJsonObject(jsonTransaction,
+                                                testContext.succeeding(response3 -> testContext.verify(() -> {
+                                                    final Transaction transaction = Json.decodeValue(response3.body(),
+                                                            Transaction.class);
+                                                    Assertions.assertThat(transaction.getTransactionId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getFromAccountId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getToAccountId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getAmount()).isNotNull();
+                                                    Assertions.assertThat(transaction.getCurrency()).isNotNull();
+                                                    Assertions.assertThat(transaction.getCreatedOn()).isNotNull();
+                                                    Assertions.assertThat(transaction.getStatus())
+                                                            .isEqualTo(Status.SUCCESS);
+                                                    Assertions.assertThat(transaction.getMessage())
+                                                            .isEqualTo("Transaction successfully complete");
+                                                    log.info("\nTransaction: {}", transaction.toString());
+
+                                                    // 4. Get Transaction by Id.
+                                                    client.get(PORT, HOST, "/transactions/" + transaction.getTransactionId())
+                                                            .as(BodyCodec.string())
+                                                            .send(testContext.succeeding(response4 -> testContext.verify(() -> {
+                                                                final Transaction foundTransaction = Json.decodeValue(
+                                                                        response4.body(), Transaction.class);
+                                                                assertThat(foundTransaction).isEqualTo(transaction);
+                                                                log.info(foundTransaction.toString());
+                                                                testContext.completeNow();
+                                                            })));
+                                                })));
+                            })));
+                })));
 
     }
 
