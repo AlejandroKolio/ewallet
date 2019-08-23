@@ -1,115 +1,117 @@
 package com.ashakhov.ewallet;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.ashakhov.ewallet.models.Account;
 import com.ashakhov.ewallet.models.CurrencyCode;
+import com.ashakhov.ewallet.models.Status;
+import com.ashakhov.ewallet.models.Transaction;
 import com.github.javafaker.Faker;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
-import java.io.IOException;
-import java.util.List;
+import io.vertx.ext.web.codec.BodyCodec;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * @author Alexander Shakhov
  */
 @Slf4j
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class TransactionsApiRequests_IT {
-    public static final String HOST = "localhost";
     private static final int PORT = 8080;
-    @NonNull
-    private static List<Account> accounts = new CopyOnWriteArrayList<>();
-    @NonNull
-    private Vertx vertx;
-    @NonNull
-    private WebClient client;
-    @NonNull
-    private Faker faker;
 
-    @Before
-    public void setUp(@NonNull TestContext context) throws IOException {
-        faker = Faker.instance();
-        vertx = Vertx.vertx();
-        client = WebClient.create(vertx);
-        vertx.deployVerticle(new WebServer());
+    public static final String HOST = "localhost";
+
+    @BeforeEach
+    public void setUp(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+        vertx.deployVerticle(new WebServer(), testContext.completing());
     }
 
-    @After
-    public void tearDown(@NonNull TestContext context) {
-        vertx.close(context.asyncAssertSuccess());
+    @AfterEach
+    public void tearDown(@NonNull Vertx vertx, @NonNull VertxTestContext context) {
+        vertx.close(context.completing());
+    }
+
+    @DisplayName("Transaction Test")
+    @RepeatedTest(value = 5, name = "Create Accounts from/to and Transfer money")
+    public void creteTransactionTest(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+        final WebClient client = WebClient.create(vertx);
+
+        // 1. Account from
+        final JsonObject jsonFrom = accountBuilder();
+        client.post(PORT, HOST, "/accounts")
+                .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                .as(BodyCodec.string())
+                .sendJsonObject(jsonFrom, testContext.succeeding(response1 -> testContext.verify(() -> {
+                    final Account from = Json.decodeValue(response1.body(), Account.class);
+                    Assertions.assertThat(from.getAccountId()).isNotBlank();
+                    Assertions.assertThat(from.getUsername()).isNotBlank();
+                    Assertions.assertThat(from.getBalance()).isNotNegative();
+                    Assertions.assertThat(from.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
+                    log.info("From Account: {}", from.toString());
+
+                    // 1. Account to
+                    final JsonObject jsonTo = accountBuilder();
+                    client.post(PORT, HOST, "/accounts")
+                            .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                            .as(BodyCodec.string())
+                            .sendJsonObject(jsonTo, testContext.succeeding(response2 -> testContext.verify(() -> {
+                                final Account to = Json.decodeValue(response2.body(), Account.class);
+                                Assertions.assertThat(to.getAccountId()).isNotBlank();
+                                Assertions.assertThat(to.getUsername()).isNotBlank();
+                                Assertions.assertThat(to.getBalance()).isNotNegative();
+                                Assertions.assertThat(to.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
+                                log.info("To Account: {}", to.toString());
+
+                                // 3. Transaction
+                                final JsonObject jsonTransaction = transactionBuilder(from, to);
+                                client.post(PORT, HOST, "/transactions")
+                                        .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                                        .sendJsonObject(jsonTransaction,
+                                                testContext.succeeding(response3 -> testContext.verify(() -> {
+                                                    final Transaction transaction = Json.decodeValue(response3.body(),
+                                                            Transaction.class);
+                                                    Assertions.assertThat(transaction.getTransactionId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getFromAccountId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getToAccountId()).isNotBlank();
+                                                    Assertions.assertThat(transaction.getAmount()).isNotNull();
+                                                    Assertions.assertThat(transaction.getCurrency()).isNotNull();
+                                                    Assertions.assertThat(transaction.getCreatedOn()).isNotNull();
+                                                    Assertions.assertThat(transaction.getStatus())
+                                                            .isEqualTo(Status.SUCCESS);
+                                                    Assertions.assertThat(transaction.getMessage())
+                                                            .isEqualTo("Transaction successfully complete");
+                                                    log.info("Transaction: {}", transaction.toString());
+                                                    testContext.completeNow();
+                                                })));
+                                testContext.completeNow();
+                            })));
+                })));
     }
 
     @Test
-    public void createTransactionTest(@NonNull TestContext context) {
-        final Async async = context.async();
-        final JsonObject accountFromJson = accountBuilder();
-        final Buffer buffer = Buffer.buffer();
-
-        final HttpRequest<Buffer> post = client.post(PORT, HOST, "/accounts");
-
-        post
-                .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
-                .sendJsonObject(accountFromJson, ar -> {
-                    if (ar.succeeded()) {
-                        final Account account = Json.decodeValue(ar.result().body(), Account.class);
-                        context.assertNotNull(account.getUsername());
-                        context.assertNotNull(account.getBalance());
-                        context.assertNotNull(account.getAccountId());
-                        context.assertNotNull(account.getCurrency());
-                        log.info(account.toString());
-                        buffer.appendString(account.getAccountId());
-                        async.complete();
-                    } else {
-                        log.error("Error ", ar.cause());
-                        Promise.failedPromise(ar.cause());
-                        async.complete();
-                    }
-                });
-
-        final JsonObject accountToJson = accountBuilder();
-        post
-                .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
-                .sendJsonObject(accountToJson, ar -> {
-                    if (ar.succeeded()) {
-                        final Account account = Json.decodeValue(ar.result().body(), Account.class);
-                        context.assertNotNull(account.getUsername());
-                        context.assertNotNull(account.getBalance());
-                        context.assertNotNull(account.getAccountId());
-                        context.assertNotNull(account.getCurrency());
-                        log.info(account.toString());
-                        buffer.appendString(account.getAccountId());
-                        async.complete();
-                    } else {
-                        log.error("Error ", ar.cause());
-                        Promise.failedPromise(ar.cause());
-                        async.complete();
-                    }
-                });
-
-        log.info(buffer.toString());
-    }
-
-    private JsonObject accountBuilder() {
-        return new JsonObject()
-                    .put("username", faker.name().fullName())
-                    .put("balance", faker.random().nextInt(100, 1000).doubleValue())
-                    .put("currency", CurrencyCode.of(new Random().nextInt(CurrencyCode.values().length)));
+    public void webServerStartAndListenOnPortTest(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+        final WebClient client = WebClient.create(vertx);
+        client.get(PORT, HOST, "/accounts")
+                .as(BodyCodec.string())
+                .send(testContext.succeeding(response -> testContext.verify(() -> {
+                    assertThat(response.body()).isEqualTo("[]");
+                    testContext.completeNow();
+                })));
     }
 
     @Test
@@ -122,30 +124,17 @@ public class TransactionsApiRequests_IT {
 
     }
 
-    private void createAccount(@NonNull TestContext context) {
+    private static JsonObject accountBuilder() {
+        final Faker faker = Faker.instance();
+        return new JsonObject().put("username", faker.name().fullName())
+                .put("balance", faker.random().nextInt(100, 1000).doubleValue())
+                .put("currency", CurrencyCode.of(new Random().nextInt(CurrencyCode.values().length)));
+    }
 
-/*        final String json = Json.encodePrettily(obj);
-        final String length = Integer.toString(json.length());
-        final Buffer buffer = Buffer.buffer();
-        vertx.createHttpClient()
-                .post(PORT, "localhost", "/accounts")
-                .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .putHeader(HttpHeaders.CONTENT_LENGTH, length)
-                .handler(response -> {
-                    context.assertEquals(response.statusCode(), 201);
-                    context.assertTrue(response.headers().get(HttpHeaders.CONTENT_TYPE).contains("application/json"));
-                    response.bodyHandler(body -> {
-                        final Account account = Json.decodeValue(body.toString(), Account.class);
-                        context.assertNotNull(account.getUsername());
-                        context.assertNotNull(account.getBalance());
-                        context.assertNotNull(account.getAccountId());
-                        context.assertNotNull(account.getCurrency());
-                        log.info(account.toString());
-                        async.complete();
-                    });
-                })
-                .write(json)
-                .end();
-        return buffer;*/
+    private static JsonObject transactionBuilder(@NonNull Account from, @NonNull Account to) {
+        return new JsonObject().put("fromAccountId", from.getAccountId())
+                .put("toAccountId", to.getAccountId())
+                .put("amount", from.getBalance())
+                .put("currency", from.getCurrency());
     }
 }

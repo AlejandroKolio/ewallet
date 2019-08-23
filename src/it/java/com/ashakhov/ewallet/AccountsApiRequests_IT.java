@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class AccountsApiRequests_IT {
     private static final int PORT = 8080;
+
     public static final String HOST = "localhost";
     @NonNull
     private Vertx vertx;
@@ -95,7 +96,7 @@ public class AccountsApiRequests_IT {
         final String length = Integer.toString(json.length());
 
         vertx.createHttpClient()
-                .post(PORT, "localhost", "/accounts")
+                .post(PORT, HOST, "/accounts")
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .putHeader(HttpHeaders.CONTENT_LENGTH, length)
                 .handler(createResponse -> {
@@ -111,7 +112,7 @@ public class AccountsApiRequests_IT {
                         async.complete();
 
                         vertx.createHttpClient()
-                                .get(PORT, "localhost", "/accounts")
+                                .get(PORT, HOST, "/accounts")
                                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                                 .putHeader(HttpHeaders.CONTENT_LENGTH, length)
                                 .handler(getAllResponse -> {
@@ -145,7 +146,7 @@ public class AccountsApiRequests_IT {
         final String length = Integer.toString(json.length());
         // 1. Create Account.
         vertx.createHttpClient()
-                .post(PORT, "localhost", "/accounts")
+                .post(PORT, HOST, "/accounts")
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .putHeader(HttpHeaders.CONTENT_LENGTH, length)
                 .handler(createResponse -> {
@@ -162,7 +163,7 @@ public class AccountsApiRequests_IT {
 
                         // 2. Get Account.
                         vertx.createHttpClient()
-                                .get(PORT, "localhost", String.format("/accounts/%s", account.getAccountId()))
+                                .get(PORT, HOST, String.format("/accounts/%s", account.getAccountId()))
                                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                                 .putHeader(HttpHeaders.CONTENT_LENGTH, length)
                                 .handler(getAllResponse -> {
@@ -196,7 +197,7 @@ public class AccountsApiRequests_IT {
 
         // 1. Create Account.
         vertx.createHttpClient()
-                .post(PORT, "localhost", "/accounts")
+                .post(PORT, HOST, "/accounts")
                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .putHeader(HttpHeaders.CONTENT_LENGTH, length)
                 .handler(createResponse -> {
@@ -217,7 +218,7 @@ public class AccountsApiRequests_IT {
 
                         // 2. Update Username.
                         vertx.createHttpClient()
-                                .put(PORT, "localhost", String.format("/accounts/%s", account.getAccountId()))
+                                .put(PORT, HOST, String.format("/accounts/%s", account.getAccountId()))
                                 .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                                 .putHeader(HttpHeaders.CONTENT_LENGTH, Integer.toString(newJson.length()))
                                 .handler(updateResponse -> {
@@ -226,7 +227,7 @@ public class AccountsApiRequests_IT {
 
                                     // 3. Find Account.
                                     vertx.createHttpClient()
-                                            .get(PORT, "localhost", String.format("/accounts/%s", account.getAccountId()))
+                                            .get(PORT, HOST, String.format("/accounts/%s", account.getAccountId()))
                                             .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                                             .putHeader(HttpHeaders.CONTENT_LENGTH, length)
                                             .handler(getResponse -> {
