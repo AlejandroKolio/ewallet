@@ -34,7 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @Slf4j
 @ExtendWith(VertxExtension.class)
-public class TransactionsApiRequests_IT {
+public class TransactionsApiRequestsTest {
     private static final int PORT = 8080;
 
     public static final String HOST = "localhost";

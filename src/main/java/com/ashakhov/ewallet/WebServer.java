@@ -58,11 +58,15 @@ public class WebServer extends AbstractVerticle {
                 exceptionResolver.resolveNotFoundException();
                 exceptionResolver.resolveApiClientException();
 
-                server = vertx.createHttpServer(new HttpServerOptions().setPort(PORT).setHost(HOST));
-                server.requestHandler(router).listen();
-                promise.complete();
-            } else {
-                promise.fail(asyncResult.cause());
+                server = vertx.createHttpServer(new HttpServerOptions().setPort(PORT).setHost(HOST))
+                        .requestHandler(router)
+                        .listen(config().getInteger("http.port", PORT), result -> {
+                            if (result.succeeded()) {
+                                promise.complete();
+                            } else {
+                                promise.fail(result.cause());
+                            }
+                        });
             }
         });
     }
