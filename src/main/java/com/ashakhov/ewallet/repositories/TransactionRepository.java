@@ -1,9 +1,9 @@
 package com.ashakhov.ewallet.repositories;
 
 import com.ashakhov.ewallet.models.Transaction;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -24,7 +24,7 @@ public class TransactionRepository implements BankRepository<Transaction> {
     }
 
     private TransactionRepository() {
-        transactions = new CopyOnWriteArrayList<>();
+        transactions = new ArrayList<>();
     }
 
     @Override
@@ -44,6 +44,8 @@ public class TransactionRepository implements BankRepository<Transaction> {
 
     @Override
     public Optional<Transaction> findById(String transactionId) {
-        return transactions.stream().filter(transaction -> transaction.getTransactionId().equals(transactionId)).findAny();
+        return transactions.stream()
+                .filter(transaction -> transaction.getTransactionId().equals(transactionId))
+                .findAny();
     }
 }

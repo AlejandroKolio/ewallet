@@ -1,9 +1,9 @@
 package com.ashakhov.ewallet.repositories;
 
 import com.ashakhov.ewallet.models.Account;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -13,7 +13,7 @@ import lombok.NonNull;
 public class AccountRepository implements BankRepository<Account> {
     @Getter
     @NonNull
-    private final CopyOnWriteArrayList<Account> accounts;
+    private final List<Account> accounts;
     private static AccountRepository instance;
 
     public static AccountRepository getInstance() {
@@ -24,7 +24,7 @@ public class AccountRepository implements BankRepository<Account> {
     }
 
     private AccountRepository() {
-        accounts = new CopyOnWriteArrayList<>();
+        accounts = new ArrayList<>();
     }
 
     @Override
