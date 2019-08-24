@@ -162,7 +162,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-    put:
+    patch:
       summary: Update Account's username
       operationId: updateAccount
       tags:
