@@ -12,10 +12,11 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum CurrencyCode {
-    USD("usd"),
-    EUR("eur"),
-    RUB("rub");
+    USD(0,"usd"),
+    EUR(1,"eur"),
+    RUB(2,"rub");
 
+    private final int id;
     @NonNull
     private final String name;
 
@@ -23,6 +24,14 @@ public enum CurrencyCode {
     public static CurrencyCode of(@NonNull String name) {
         return Arrays.stream(CurrencyCode.values())
                 .filter(code -> code.name.equalsIgnoreCase(name))
+                .findAny()
+                .orElseThrow(() -> new NoSuchElementException("There is no such Currency"));
+    }
+
+    @NonNull
+    public static CurrencyCode of(int id) {
+        return Arrays.stream(CurrencyCode.values())
+                .filter(code -> code.id == id)
                 .findAny()
                 .orElseThrow(() -> new NoSuchElementException("There is no such Currency"));
     }

@@ -1,31 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.ashakhov.ewallet</groupId>
-    <artifactId>e-wallet</artifactId>
+    <artifactId>ewallet</artifactId>
     <version>1.0-SNAPSHOT</version>
-
     <name>e-wallet</name>
     <description>E-Wallet Service</description>
-
     <properties>
+        <exec.mainClass>com.ashakhov.ewallet.Launcher</exec.mainClass>
         <java.version>1.8</java.version>
         <vertx.version>3.8.0</vertx.version>
+        <faker.version>1.0.1</faker.version>
+        <junit5.version>5.5.1</junit5.version>
         <apache.version>4.5.9</apache.version>
-        <junit5.version>5.5.0</junit5.version>
-        <logger.version>1.7.28</logger.version>
         <lombok.version>1.18.8</lombok.version>
+        <logger.version>1.7.28</logger.version>
         <assertj.version>3.13.1</assertj.version>
         <friendlyId.version>1.1.0</friendlyId.version>
         <maven.compiler.source>1.8</maven.compiler.source>
+        <vertx.projectVersion>3.4.2</vertx.projectVersion>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven-shade-plugin.version>2.3</maven-shade-plugin.version>
+        <vertx.verticle>com.ashakhov.ewallet.WebServer</vertx.verticle>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <fabric8-vertx-maven-plugin.projectVersion>1.0.9</fabric8-vertx-maven-plugin.projectVersion>
     </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -35,11 +36,16 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-dependencies</artifactId>
+                <version>${vertx.projectVersion}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-
     <dependencies>
-        <!--region vert.x-->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
@@ -52,21 +58,14 @@
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
             <artifactId>vertx-web-api-contract</artifactId>
             <version>${vertx.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-jdbc-client</artifactId>
-            <version>${vertx.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-sql-common</artifactId>
-            <version>${vertx.version}</version>
-        </dependency>
-        <!--endregion-->
-        <!--region Utils-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -83,13 +82,6 @@
             <version>${apache.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.hsqldb</groupId>
-            <artifactId>hsqldb</artifactId>
-            <version>2.5.0</version>
-        </dependency>
-        <!--endregion-->
-        <!--region Logger-->
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${logger.version}</version>
@@ -99,18 +91,10 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>${logger.version}</version>
         </dependency>
-        <!--endregion-->
-        <!--region Tests-->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit5.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <version>${junit5.version}</version>
-            <scope>test</scope>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>${faker.version}</version>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
@@ -119,27 +103,118 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-junit5</artifactId>
+            <version>${vertx.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit5.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit5.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit5.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!--endregion-->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.5.0</version>
-                    <configuration>
-                        <mainClass>com.ashakhov.ewallet.Main</mainClass>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <sourceDirectory>src/main/java</sourceDirectory>
+        <testSourceDirectory>src/it/java</testSourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- Separates the unit tests from the integration tests. -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M3</version>
+                <configuration>
+                    <skip>true</skip>
+                    <trimStackTrace>false</trimStackTrace>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>unit-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <includes>
+                                <include>**/*Test.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*Test.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>integration-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <includes>
+                                <include>**/*Test.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>vertx-maven-plugin</artifactId>
+                <version>${fabric8-vertx-maven-plugin.projectVersion}</version>
+                <executions>
+                    <execution>
+                        <id>vmp-init-package</id>
+                        <goals>
+                            <goal>initialize</goal>
+                            <goal>package</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <redeploy>true</redeploy>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

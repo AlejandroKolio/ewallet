@@ -1,4 +1,4 @@
-package com.ashakhov.ewallet.services.nodb;
+package com.ashakhov.ewallet.services;
 
 import com.ashakhov.ewallet.exceptions.AccountNotFoundException;
 import com.ashakhov.ewallet.exceptions.ApiClientException;
@@ -6,8 +6,8 @@ import com.ashakhov.ewallet.exceptions.handler.ErrorCodes;
 import com.ashakhov.ewallet.models.Account;
 import com.ashakhov.ewallet.models.Status;
 import com.ashakhov.ewallet.models.Transaction;
-import com.ashakhov.ewallet.repositories.nodb.AccountRepository;
-import com.ashakhov.ewallet.repositories.nodb.TransactionRepository;
+import com.ashakhov.ewallet.repositories.AccountRepository;
+import com.ashakhov.ewallet.repositories.TransactionRepository;
 import com.ashakhov.ewallet.utils.EWalletHandler;
 import com.devskiller.friendly_id.FriendlyId;
 import io.netty.handler.codec.http.HttpResponseStatus;

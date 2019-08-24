@@ -1,11 +1,11 @@
-package com.ashakhov.ewallet.services.nodb;
+package com.ashakhov.ewallet.services;
 
 import com.ashakhov.ewallet.exceptions.AccountNotFoundException;
 import com.ashakhov.ewallet.exceptions.ApiClientException;
 import com.ashakhov.ewallet.exceptions.DuplicateAccountException;
 import com.ashakhov.ewallet.exceptions.handler.ErrorCodes;
 import com.ashakhov.ewallet.models.Account;
-import com.ashakhov.ewallet.repositories.nodb.AccountRepository;
+import com.ashakhov.ewallet.repositories.AccountRepository;
 import com.devskiller.friendly_id.FriendlyId;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.http.HttpHeaders;
@@ -93,10 +93,11 @@ public class AccountService {
             final Account account = Json.decodeValue(bodyAsString, Account.class);
             final Optional<Account> any = repository.getAccounts()
                     .stream()
-                    .filter(a -> a.getUsername().equals(account.getUsername()))
+                    .filter(a -> a.getUsername().equals(account.getUsername())
+                            && a.getCurrency().equals(account.getCurrency()))
                     .findAny();
 
-            if (any.isPresent() && any.get().getCurrency().equals(account.getCurrency())) {
+            if (any.isPresent()) {
                 context.fail(ErrorCodes.BAD_REQUEST.getCode(), new DuplicateAccountException(
                         String.format("Account with name '%s' and currency '%s' is already exsist",
                                 account.getUsername(), account.getCurrency())));

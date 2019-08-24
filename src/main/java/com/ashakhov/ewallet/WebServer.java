@@ -1,10 +1,8 @@
 package com.ashakhov.ewallet;
 
 import com.ashakhov.ewallet.exceptions.handler.DefaultExceptionResolver;
-import com.ashakhov.ewallet.services.nodb.AccountService;
-import com.ashakhov.ewallet.services.db.AccountsService;
-import com.ashakhov.ewallet.services.db.TransactionsService;
-import com.ashakhov.ewallet.services.nodb.TransactionService;
+import com.ashakhov.ewallet.services.AccountService;
+import com.ashakhov.ewallet.services.TransactionService;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
@@ -23,10 +21,6 @@ public class WebServer extends AbstractVerticle {
     @NonNull
     private HttpServer server;
     @NonNull
-    private AccountsService accountsService;
-    @NonNull
-    private TransactionsService transactionsService;
-    @NonNull
     private final AccountService accountService;
     @NonNull
     private final TransactionService transactionService;
@@ -41,8 +35,6 @@ public class WebServer extends AbstractVerticle {
         OpenAPI3RouterFactory.create(vertx, "openapi.yml", asyncResult -> {
             if (asyncResult.succeeded()) {
                 final OpenAPI3RouterFactory routerFactory = asyncResult.result();
-                transactionsService = TransactionsService.getInstance(vertx);
-                accountsService = AccountsService.getInstance(vertx);
 
                 // 1. Get All Accounts.
                 routerFactory.addHandlerByOperationId("getAccounts", accountService::getAccounts);
@@ -66,11 +58,15 @@ public class WebServer extends AbstractVerticle {
                 exceptionResolver.resolveNotFoundException();
                 exceptionResolver.resolveApiClientException();
 
-                server = vertx.createHttpServer(new HttpServerOptions().setPort(PORT).setHost(HOST));
-                server.requestHandler(router).listen();
-                promise.complete();
-            } else {
-                promise.fail(asyncResult.cause());
+                server = vertx.createHttpServer(new HttpServerOptions().setPort(PORT).setHost(HOST))
+                        .requestHandler(router)
+                        .listen(config().getInteger("http.port", PORT), result -> {
+                            if (result.succeeded()) {
+                                promise.complete();
+                            } else {
+                                promise.fail(result.cause());
+                            }
+                        });
             }
         });
     }

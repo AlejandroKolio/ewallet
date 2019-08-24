@@ -1,13 +1,9 @@
-package com.ashakhov.ewallet.repositories.nodb;
+package com.ashakhov.ewallet.repositories;
 
 import com.ashakhov.ewallet.models.Transaction;
-import com.ashakhov.ewallet.repositories.BankRepository;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.PriorityBlockingQueue;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -28,7 +24,7 @@ public class TransactionRepository implements BankRepository<Transaction> {
     }
 
     private TransactionRepository() {
-        transactions = new CopyOnWriteArrayList<>();
+        transactions = new ArrayList<>();
     }
 
     @Override
@@ -48,6 +44,8 @@ public class TransactionRepository implements BankRepository<Transaction> {
 
     @Override
     public Optional<Transaction> findById(String transactionId) {
-        return transactions.stream().filter(transaction -> transaction.getTransactionId().equals(transactionId)).findAny();
+        return transactions.stream()
+                .filter(transaction -> transaction.getTransactionId().equals(transactionId))
+                .findAny();
     }
 }

@@ -65,7 +65,7 @@ public final class EWalletHandler {
                     case EUR:
                         return 0.90;
                     case RUB:
-                        return 66.74;
+                        return 65.72;
                     default:
                         return 1.0;
                 }
