@@ -1,6 +1,9 @@
 #### E-Wallet Service based on Vert.x.
 
 Is a RESTful API for money transfers between accounts.
+Service includes internal currency rates and convertation between currencies.
+Just for simplicity, all the currency rates are static (data from 21.08.2019) 
+and never changing.
 
 #### Building
 
