@@ -1,4 +1,6 @@
-### E-Wallet Service based on Vert.x.
+E-Wallet Service based on Vert.x.
+===========
+[![codecov](https://codecov.io/gh/AlejandroKolio/ewallet/branch/master/graph/badge.svg)](https://codecov.io/gh/AlejandroKolio/ewallet)
 
 Is a RESTful API for money transfers between accounts.
 
