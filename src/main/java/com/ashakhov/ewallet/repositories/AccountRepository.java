@@ -14,6 +14,7 @@ public class AccountRepository implements BankRepository<Account> {
     @Getter
     @NonNull
     private final List<Account> accounts;
+
     private static AccountRepository instance;
 
     public static AccountRepository getInstance() {

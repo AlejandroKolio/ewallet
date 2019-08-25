@@ -3,6 +3,7 @@ package com.ashakhov.ewallet;
 import com.ashakhov.ewallet.exceptions.handler.DefaultExceptionResolver;
 import com.ashakhov.ewallet.services.AccountService;
 import com.ashakhov.ewallet.services.TransactionService;
+import com.ashakhov.ewallet.services.mongo.AccountServiceMongo;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
@@ -35,13 +36,13 @@ public class WebServer extends AbstractVerticle {
         OpenAPI3RouterFactory.create(vertx, "openapi.yml", asyncResult -> {
             if (asyncResult.succeeded()) {
                 final OpenAPI3RouterFactory routerFactory = asyncResult.result();
-
+                final AccountServiceMongo accountServiceMongo = new AccountServiceMongo(vertx);
                 // 1. Get All Accounts.
                 routerFactory.addHandlerByOperationId("getAccounts", accountService::getAccounts);
                 // 2. Get Account by accountId.
                 routerFactory.addHandlerByOperationId("getAccountById", accountService::getAccountById);
                 // 3. Create Account.
-                routerFactory.addHandlerByOperationId("createAccount", accountService::createAccount);
+                routerFactory.addHandlerByOperationId("createAccount", accountServiceMongo::save);
                 // 4. Update Account's username.
                 routerFactory.addHandlerByOperationId("updateAccount", accountService::updateAccount);
                 // 5. Create Transaction
