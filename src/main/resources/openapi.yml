@@ -99,7 +99,7 @@ paths:
                 $ref: "#/components/schemas/Error"
     post:
       summary: Create an Account
-      operationId: createAccount
+      operationId: create
       tags:
         - accounts
       responses:

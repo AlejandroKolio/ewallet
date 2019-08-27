@@ -76,7 +76,6 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-mongo-embedded-db</artifactId>
             <version>${vertx.version}</version>
-            <scope>compile</scope>
         </dependency>
         <!--endregion-->
         <dependency>

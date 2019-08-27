@@ -8,6 +8,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import lombok.NonNull;
@@ -25,6 +26,8 @@ public class WebServer extends AbstractVerticle {
     private final AccountService accountService;
     @NonNull
     private final TransactionService transactionService;
+    @NonNull
+    private MongoClient client;
 
     public WebServer() {
         accountService = AccountService.getInstance();
@@ -36,15 +39,17 @@ public class WebServer extends AbstractVerticle {
         OpenAPI3RouterFactory.create(vertx, "openapi.yml", asyncResult -> {
             if (asyncResult.succeeded()) {
                 final OpenAPI3RouterFactory routerFactory = asyncResult.result();
+
                 final AccountServiceMongo accountServiceMongo = new AccountServiceMongo(vertx);
+
                 // 1. Get All Accounts.
-                routerFactory.addHandlerByOperationId("getAccounts", accountService::getAccounts);
+                routerFactory.addHandlerByOperationId("getAccounts", accountServiceMongo::searchAll);
                 // 2. Get Account by accountId.
-                routerFactory.addHandlerByOperationId("getAccountById", accountService::getAccountById);
+                routerFactory.addHandlerByOperationId("getAccountById", accountServiceMongo::searchOne);
                 // 3. Create Account.
-                routerFactory.addHandlerByOperationId("createAccount", accountServiceMongo::save);
+                routerFactory.addHandlerByOperationId("create", accountServiceMongo::create);
                 // 4. Update Account's username.
-                routerFactory.addHandlerByOperationId("updateAccount", accountService::updateAccount);
+                routerFactory.addHandlerByOperationId("updateAccount", accountServiceMongo::update);
                 // 5. Create Transaction
                 routerFactory.addHandlerByOperationId("createTransaction", transactionService::createTransaction);
                 // 6. Get Transaction by id.
@@ -68,6 +73,7 @@ public class WebServer extends AbstractVerticle {
                                 promise.fail(result.cause());
                             }
                         });
+
             }
         });
     }

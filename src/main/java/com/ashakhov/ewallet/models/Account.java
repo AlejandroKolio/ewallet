@@ -15,10 +15,10 @@ import lombok.ToString;
 @Getter
 @ToString
 @EqualsAndHashCode
-/*@JsonInclude(JsonInclude.Include.NON_NULL)*/
 @JsonPropertyOrder({"accountId", "username", "balance", "currency"})
 public class Account {
     @NonNull
+    @JsonProperty("accountId")
     private final String accountId;
     @NonNull
     private final String username;
@@ -37,9 +37,9 @@ public class Account {
     }
 
     public Account(@NonNull JsonObject json) {
-        accountId = json.getString("ACCOUNTID");
-        username = json.getString("USERNAME");
-        balance = json.getDouble("BALANCE");
-        currency = CurrencyCode.of(json.getString("CURRENCY"));
+        accountId = json.getString("_id");
+        username = json.getString("username");
+        balance = json.getDouble("balance");
+        currency = CurrencyCode.of(json.getString("currency"));
     }
 }

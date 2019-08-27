@@ -1,7 +1,6 @@
 package com.ashakhov.ewallet.repositories;
 
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
@@ -9,7 +8,6 @@ import io.vertx.ext.web.RoutingContext;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 
 /**
  * @author Alexander Shakhov
@@ -22,36 +20,25 @@ public abstract class AbstractRepository {
 
     public AbstractRepository(@NonNull Vertx vertx) {
         final JsonObject embeddedMongoOptions = new DeploymentOptions()
+                // @formatter:off
                 .setWorker(true)
-                .setConfig(new JsonObject().put("port", "mongodb://localhost:27018").put("version", "3.4.3").put("db_name", "e-wallet"))
-                .toJson();
+                .setConfig(new JsonObject()
+                        .put("host", "127.0.0.1")
+                        .put("port", 27018)
+                        .put("db_name", "ewallet")
+                        .put("version", "3.4.3")
+                        .put("waitQueueMultiple", 1000)).toJson();
+                        // @formatter:on
         client = MongoClient.createShared(vertx, embeddedMongoOptions);
     }
 
-    public abstract void save(@NonNull RoutingContext context);
+    public abstract void create(@NonNull RoutingContext context);
 
-    protected void find(@NonNull String id, @NonNull String collection) {
-        final JsonObject query = new JsonObject().put("_id", new ObjectId(id));
-        client.findOne(collection, query, null, ar -> {
-            if (ar.succeeded()) {
-                log.info("Found: {}", ar.result());
-                Promise.succeededPromise(ar.result());
-            } else {
-                log.error("Failed: ", ar.cause());
-                Promise.failedPromise(ar.cause());
-            }
-        });
-    }
+    public abstract void update(@NonNull RoutingContext context);
 
-    protected void findAll(@NonNull JsonObject json, @NonNull String collection) {
-        client.find(collection, json, ar -> {
-            if (ar.succeeded()) {
-                log.info("Found: {}", ar.result());
-                Promise.succeededPromise(ar.result());
-            } else {
-                log.error("Failed: ", ar.cause());
-                Promise.failedPromise(ar.cause());
-            }
-        });
-    }
+    public abstract void delete(@NonNull RoutingContext context);
+
+    public abstract void searchOne(@NonNull RoutingContext context);
+
+    public abstract void searchAll(@NonNull RoutingContext context);
 }

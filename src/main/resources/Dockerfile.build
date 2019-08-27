@@ -1,0 +1,4 @@
+FROM ubuntu:18.04
+COPY . /ewallet
+RUN make /ewallet
+CMD python /ewallet/ewallet.py

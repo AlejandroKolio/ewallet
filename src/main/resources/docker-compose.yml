@@ -1,0 +1,15 @@
+version: "2.4"
+services:
+  mongo:
+    image: mongo:3.4
+    container_name: ewallet-mongodb
+    cpus: 0.25
+    mem_limit: 250m
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    logging:
+      driver: "none"
+    volumes:
+      - ${PWD:-./}:/srv
