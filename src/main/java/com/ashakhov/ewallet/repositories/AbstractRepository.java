@@ -32,13 +32,13 @@ public abstract class AbstractRepository {
         client = MongoClient.createShared(vertx, embeddedMongoOptions);
     }
 
-    public abstract void create(@NonNull RoutingContext context);
+    protected abstract void create(@NonNull RoutingContext context);
 
-    public abstract void update(@NonNull RoutingContext context);
+    protected abstract void update(@NonNull RoutingContext context);
 
-    public abstract void delete(@NonNull RoutingContext context);
+    protected abstract void delete(@NonNull RoutingContext context);
 
-    public abstract void searchOne(@NonNull RoutingContext context);
+    protected abstract void searchOne(@NonNull RoutingContext context);
 
-    public abstract void searchAll(@NonNull RoutingContext context);
+    protected abstract void searchAll(@NonNull RoutingContext context);
 }

@@ -2,6 +2,7 @@ package com.ashakhov.ewallet.services.mongo;
 
 import com.ashakhov.ewallet.exceptions.AccountNotFoundException;
 import com.ashakhov.ewallet.exceptions.DuplicateAccountException;
+import com.ashakhov.ewallet.exceptions.WrongRequestFormatException;
 import com.ashakhov.ewallet.exceptions.handler.ErrorCodes;
 import com.ashakhov.ewallet.models.Account;
 import com.ashakhov.ewallet.repositories.AbstractRepository;
@@ -18,7 +19,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.http.entity.ContentType;
 
 /**
@@ -84,7 +84,7 @@ public class AccountServiceMongo extends AbstractRepository {
         final JsonObject queryToUpdate = context.getBodyAsJson();
         getClient().findOneAndUpdate(ACCOUNTS, queryId, new JsonObject().put("$set", queryToUpdate), ar -> {
             if (ar.succeeded()) {
-                if(Objects.nonNull(ar.result())) {
+                if (Objects.nonNull(ar.result())) {
                     final Account updatedAccount = new Account(ar.result());
                     context.response()
                             .setStatusCode(HttpResponseStatus.ACCEPTED.code())
@@ -96,7 +96,6 @@ public class AccountServiceMongo extends AbstractRepository {
                     context.fail(ErrorCodes.BAD_REQUEST.getCode(), new AccountNotFoundException(
                             String.format("Account with accountId:%s not found", accountId)));
                 }
-
             } else {
                 log.error("Failed: ", ar.cause());
                 Promise.failedPromise(ar.cause());
@@ -106,7 +105,23 @@ public class AccountServiceMongo extends AbstractRepository {
 
     @Override
     public void delete(@NonNull RoutingContext context) {
-        throw new NotImplementedException("API not implemented");
+        final String accountId = context.pathParam("accountId");
+        final JsonObject query = new JsonObject().put("_id", accountId);
+        getClient().removeDocument(ACCOUNTS, query, ar -> {
+            if (ar.succeeded()) {
+                final JsonObject json = ar.result().toJson();
+                log.debug("Account with accountId:{} removed", accountId);
+                context.response()
+                        .setStatusCode(HttpResponseStatus.NO_CONTENT.code())
+                        .putHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())
+                        .end(Json.encode(json));
+            } else {
+                log.error("Failed: ", ar.cause());
+                Promise.failedPromise(ar.cause());
+                context.fail(ErrorCodes.NOT_FOUND.getCode(),
+                        new AccountNotFoundException(String.format("Account with accountId:%s not found", accountId)));
+            }
+        });
     }
 
     @Override
@@ -132,10 +147,7 @@ public class AccountServiceMongo extends AbstractRepository {
             } else {
                 log.error("Failed: ", ar.cause());
                 Promise.failedPromise(ar.cause());
-                context.response()
-                        .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
-                        .putHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())
-                        .end();
+                context.fail(ErrorCodes.BAD_REQUEST.getCode(), new WrongRequestFormatException("Bad format request"));
             }
         });
     }

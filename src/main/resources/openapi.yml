@@ -175,9 +175,38 @@ paths:
           schema:
             type: string
       responses:
-        '204':
+        '202':
           description: Expected to have an updated username
 
+        '404':
+          description: |
+            - code Account is not found.
+              - Description: Account with provided id is not found
+            - status Resourse is unknown or not found.
+              - Description: resourse not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Removes the Account
+      operationId: deleteAccountById
+      tags:
+        - accounts
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The accountId of the account to remove
+      responses:
+        '204':
+          description: Expected to have to no content
         '404':
           description: |
             - code Account is not found.

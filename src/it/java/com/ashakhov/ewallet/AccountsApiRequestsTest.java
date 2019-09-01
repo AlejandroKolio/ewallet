@@ -71,7 +71,7 @@ public class AccountsApiRequestsTest {
                     Assertions.assertThat(from.getUsername()).isNotBlank();
                     Assertions.assertThat(from.getBalance()).isNotNegative();
                     Assertions.assertThat(from.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
-                    log.info("Account: {}", from.toString());
+                    log.debug("Account: {}", from.toString());
                 })));
         testContext.completeNow();
     }
@@ -90,7 +90,7 @@ public class AccountsApiRequestsTest {
                     Assertions.assertThat(account.getUsername()).isNotBlank();
                     Assertions.assertThat(account.getBalance()).isNotNegative();
                     Assertions.assertThat(account.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
-                    log.info("Account: {}", account.toString());
+                    log.debug("Account: {}", account.toString());
 
                     client.get(PORT, HOST, "/accounts")
                             .as(BodyCodec.string())
@@ -98,7 +98,7 @@ public class AccountsApiRequestsTest {
                                 final List<Account> accounts = Json.decodeValue(getResponse.body(),
                                         new TypeReference<List<Account>>() {});
                                 Assertions.assertThat(accounts.size()).isGreaterThan(0);
-                                log.info("Accounts: {}", accounts.toString());
+                                log.debug("Accounts: {}", accounts.toString());
                                 testContext.completeNow();
                             })));
                 })));
@@ -118,7 +118,7 @@ public class AccountsApiRequestsTest {
                     Assertions.assertThat(account.getUsername()).isNotBlank();
                     Assertions.assertThat(account.getBalance()).isNotNegative();
                     Assertions.assertThat(account.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
-                    log.info("Account: {}", account.toString());
+                    log.debug("Account: {}", account.toString());
 
                     client.get(PORT, HOST, "/accounts/" + account.getAccountId())
                             .as(BodyCodec.string())
@@ -127,7 +127,7 @@ public class AccountsApiRequestsTest {
                                 Assertions.assertThat(foundAccount)
                                         .extracting(Account::getAccountId)
                                         .isEqualTo(account.getAccountId());
-                                log.info("Get Account by accountId: {}", foundAccount.toString());
+                                log.debug("Get Account by accountId: {}", foundAccount.toString());
                                 testContext.completeNow();
                             })));
                 })));
@@ -147,7 +147,7 @@ public class AccountsApiRequestsTest {
                     Assertions.assertThat(account.getUsername()).isNotBlank();
                     Assertions.assertThat(account.getBalance()).isNotNegative();
                     Assertions.assertThat(account.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
-                    log.info("Account: {}", account.toString());
+                    log.debug("Account: {}", account.toString());
 
                     final String name = Faker.instance().name().fullName();
                     final JsonObject username = new JsonObject().put("username", name);
@@ -164,12 +164,38 @@ public class AccountsApiRequestsTest {
                                             Assertions.assertThat(foundAccount)
                                                     .extracting(Account::getUsername)
                                                     .isEqualTo(name);
-                                            log.info("Get Account by accountId: {}", foundAccount.toString());
+                                            log.debug("Get Account by accountId: {}", foundAccount.toString());
                                             testContext.completeNow();
                                         })));
                                 testContext.completeNow();
                             })));
                     testContext.completeNow();
+                })));
+    }
+
+    @Test
+    @DisplayName("Create Account and Delete one by Id.")
+    public void deleteAccountByIdTest(@NonNull Vertx vertx, @NonNull VertxTestContext testContext) {
+        final WebClient client = WebClient.create(vertx);
+        final JsonObject jsonFrom = accountBuilder();
+        client.post(PORT, HOST, "/accounts")
+                .putHeader(HttpHeaders.CONTENT_TYPE.toString(), "application/json")
+                .as(BodyCodec.string())
+                .sendJsonObject(jsonFrom, testContext.succeeding(response1 -> testContext.verify(() -> {
+                    final Account account = Json.decodeValue(response1.body(), Account.class);
+                    Assertions.assertThat(account.getAccountId()).isNotBlank();
+                    Assertions.assertThat(account.getUsername()).isNotBlank();
+                    Assertions.assertThat(account.getBalance()).isNotNegative();
+                    Assertions.assertThat(account.getCurrency()).extracting(CurrencyCode::getName).isNotNull();
+                    log.debug("Account: {}", account.toString());
+
+                    client.delete(PORT, HOST, "/accounts/" + account.getAccountId())
+                            .as(BodyCodec.string())
+                            .send(testContext.succeeding(response2 -> testContext.verify(() -> {
+                                Assertions.assertThat(response2.statusCode()).isEqualTo(HttpStatus.SC_NO_CONTENT);
+                                log.debug("Account with accountId: {} removed", account.getAccountId());
+                                testContext.completeNow();
+                            })));
                 })));
     }
 
