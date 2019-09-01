@@ -278,6 +278,7 @@ public class TransactionsApiRequestsTest {
                 })));
     }
 
+    @NonNull
     private JsonObject accountBuilder() {
         final Faker faker = Faker.instance();
         return new JsonObject().put("username", faker.name().fullName())
@@ -285,6 +286,7 @@ public class TransactionsApiRequestsTest {
                 .put("currency", CurrencyCode.of(new Random().nextInt(CurrencyCode.values().length)));
     }
 
+    @NonNull
     private JsonObject transactionBuilder(@NonNull Account from, @NonNull Account to) {
         return new JsonObject().put("fromAccountId", from.getAccountId())
                 .put("toAccountId", to.getAccountId())
