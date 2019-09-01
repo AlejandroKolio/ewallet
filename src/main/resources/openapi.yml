@@ -4,7 +4,7 @@ info:
   title: E-Wallet
 
 servers:
-  - url: http://localhost:8080/api
+  - url: http://localhost:8080
 paths:
   /transactions:
     post:

@@ -112,7 +112,7 @@ public class TransactionsApiRequestsTest {
                                                     log.info("\nTransaction: {}", transaction.toString());
 
                                                     ///Just a little delay, cause we need to make sure fromAccountId balance is changed.
-                                                    vertx.setTimer(2L, timer -> {
+                                                    vertx.setTimer(10L, timer -> {
                                                         // 4. Check we've withdraw the entire sum from the account.
                                                         client.get(PORT, HOST,
                                                                 "/accounts/" + transaction.getFromAccountId())
