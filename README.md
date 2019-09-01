@@ -30,7 +30,7 @@ Once packaged, just launch the _fat jar_ as follows:
 java -jar target/ewallet-1.0-SNAPSHOT.jar
 ```
 
-Then, open a browser to http://localhost:8080/api.
+Then, open a browser to http://localhost:8080
 
 > FYI: openapi documentation is provided and can be found in [here](https://github.com/AlejandroKolio/ewallet/blob/master/src/main/resources/openapi.yml) 
 
