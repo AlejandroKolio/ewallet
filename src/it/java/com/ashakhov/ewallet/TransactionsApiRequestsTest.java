@@ -59,7 +59,6 @@ public class TransactionsApiRequestsTest {
                     log.info("Accounts: {}", response.body());
                     testContext.completeNow();
                 })));
-
     }
 
     @DisplayName("Create Transaction")
@@ -109,33 +108,37 @@ public class TransactionsApiRequestsTest {
                                                     Assertions.assertThat(transaction.getStatus())
                                                             .isEqualTo(Status.SUCCESS);
                                                     Assertions.assertThat(transaction.getMessage())
-                                                            .isEqualTo("Transaction successfully complete");
+                                                            .isEqualTo("Transaction completed successfully");
                                                     log.info("\nTransaction: {}", transaction.toString());
 
-                                                    // 4. Check we've withdraw the entire sum from the account.
-                                                    client.get(PORT, HOST, "/accounts/" + from.getAccountId())
-                                                            .as(BodyCodec.string())
-                                                            .send(testContext.succeeding(
-                                                                    response4 -> testContext.verify(() -> {
-                                                                        final Account accountFrom = Json.decodeValue(response4.body(), Account.class);
-                                                                        Assertions.assertThat(accountFrom.getBalance())
-                                                                                .isEqualTo(0.0);
-                                                                        log.info("Withdrawn balance: {}", accountFrom.getBalance());
+                                                    ///Just a little delay, cause we need to make sure fromAccountId balance is changed.
+                                                    vertx.setTimer(2L, timer -> {
+                                                        // 4. Check we've withdraw the entire sum from the account.
+                                                        client.get(PORT, HOST,
+                                                                "/accounts/" + transaction.getFromAccountId())
+                                                                .as(BodyCodec.string())
+                                                                .send(testContext.succeeding(
+                                                                        response4 -> testContext.verify(() -> {
+                                                                            final Account accountFrom = Json.decodeValue(response4.body(), Account.class);
+                                                                            Assertions.assertThat(accountFrom.getBalance()).isEqualTo(0.0);
+                                                                            log.info("Withdrawn balance: {}", accountFrom.getBalance());
 
-                                                                        // 5. Check we've deposit and convert sum to
-                                                                        // the target Account and balance is changed.
-                                                                        client.get(PORT, HOST,
-                                                                                "/accounts/" + to.getAccountId())
-                                                                                .as(BodyCodec.string())
-                                                                                .send(testContext.succeeding(
-                                                                                        response5 -> testContext.verify(
-                                                                                                () -> {
-                                                                                                    final Account accountTo = Json.decodeValue(response5.body(), Account.class);
-                                                                                                    Assertions.assertThat(accountTo.getBalance()).isNotNull();
-                                                                                                    log.info("Deposit balance: {}", accountTo.toString());
-                                                                                                    testContext.completeNow();
-                                                                                                })));
-                                                                    })));
+                                                                            // 5. Check we've deposit and convert sum to
+                                                                            // the target Account and balance is
+                                                                            // changed.
+                                                                            client.get(PORT, HOST,
+                                                                                    "/accounts/" + to.getAccountId())
+                                                                                    .as(BodyCodec.string())
+                                                                                    .send(testContext.succeeding(
+                                                                                            response5 -> testContext.verify(
+                                                                                                    () -> {
+                                                                                                        final Account accountTo = Json.decodeValue(response5.body(), Account.class);
+                                                                                                        Assertions.assertThat(accountTo.getBalance()).isNotNull();
+                                                                                                        log.info("Deposit balance: {}", accountTo.toString());
+                                                                                                        testContext.completeNow();
+                                                                                                    })));
+                                                                        })));
+                                                    });
                                                 })));
                             })));
                 })));
@@ -188,7 +191,7 @@ public class TransactionsApiRequestsTest {
                                                     Assertions.assertThat(transaction.getStatus())
                                                             .isEqualTo(Status.SUCCESS);
                                                     Assertions.assertThat(transaction.getMessage())
-                                                            .isEqualTo("Transaction successfully complete");
+                                                            .isEqualTo("Transaction completed successfully");
                                                     log.info("Transaction: {}", transaction.toString());
 
                                                     // 4. Get all Transactions.
@@ -256,7 +259,8 @@ public class TransactionsApiRequestsTest {
                                                     Assertions.assertThat(transaction.getStatus())
                                                             .isEqualTo(Status.SUCCESS);
                                                     Assertions.assertThat(transaction.getMessage())
-                                                            .isEqualTo("Transaction successfully complete");
+                                                            .isEqualTo("Transaction completed successfully");
+
                                                     log.info("Transaction: {}", transaction.toString());
 
                                                     // 4. Get Transaction by Id.
@@ -265,11 +269,26 @@ public class TransactionsApiRequestsTest {
                                                             .as(BodyCodec.string())
                                                             .send(testContext.succeeding(
                                                                     response4 -> testContext.verify(() -> {
-                                                                        final Transaction foundTransaction =
-                                                                                Json.decodeValue(
+                                                                        final Transaction foundTransaction = Json.decodeValue(
                                                                                 response4.body(), Transaction.class);
-                                                                        assertThat(foundTransaction).isEqualTo(
-                                                                                transaction);
+                                                                        assertThat(
+                                                                                foundTransaction.getFromAccountId()).isEqualTo(
+                                                                                transaction.getFromAccountId());
+                                                                        assertThat(
+                                                                                foundTransaction.getToAccountId()).isEqualTo(
+                                                                                transaction.getToAccountId());
+                                                                        assertThat(
+                                                                                foundTransaction.getAmount()).isEqualTo(
+                                                                                transaction.getAmount());
+                                                                        assertThat(
+                                                                                foundTransaction.getCurrency()).isEqualTo(
+                                                                                transaction.getCurrency());
+                                                                        assertThat(
+                                                                                foundTransaction.getStatus()).isEqualTo(
+                                                                                transaction.getStatus());
+                                                                        assertThat(
+                                                                                foundTransaction.getMessage()).isEqualTo(
+                                                                                transaction.getMessage());
                                                                         log.info(foundTransaction.toString());
                                                                         testContext.completeNow();
                                                                     })));

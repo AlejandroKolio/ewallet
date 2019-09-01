@@ -58,8 +58,9 @@ public class TransactionServiceMongo extends AbstractRepository {
 
                 final Optional<Account> fromAccountId = accounts.stream()
                         .filter(a -> a.getAccountId()
-                                .equals(json.getString("fromAccountId")) && a.getBalance() >= json.getDouble(
-                                "amount") && a.getCurrency().equals(CurrencyCode.of(json.getString("currency"))))
+                                .equals(json.getString("fromAccountId")) &&
+                                a.getBalance() >= json.getDouble("amount")
+                                && a.getCurrency().equals(CurrencyCode.of(json.getString("currency"))))
                         .findAny();
 
                 final Optional<Account> toAccountId = accounts.stream()
@@ -159,8 +160,7 @@ public class TransactionServiceMongo extends AbstractRepository {
             if (asyncResponse.succeeded()) {
                 final String transactionId = asyncResponse.result();
                 final Transaction trn = prepareTransaction(transactionToSave.put("_id", transactionId),
-                        transaction.getStatus(),
-                        transaction.getMessage());
+                        transaction.getStatus(), transaction.getMessage());
                 transactionResponse(context, trn);
                 Promise.succeededPromise(transaction);
             } else {
@@ -193,13 +193,8 @@ public class TransactionServiceMongo extends AbstractRepository {
      * Transfer money between accounts.
      */
     private void transfer(@NonNull Transaction transaction, @NonNull Account from, @NonNull Account to) {
-        final double sum;
-        if (!from.getCurrency().equals(to.getCurrency())) {
-            sum = Math.round(EWalletHandler.convert(transaction.getAmount(), from.getCurrency(), to.getCurrency())) + to
-                    .getBalance();
-        } else {
-            sum = Math.round(transaction.getAmount() + to.getBalance());
-        }
+        final double sum = topUpSum(transaction, from, to);
+
         final JsonObject sourceBalance = new JsonObject().put("$set",
                 new JsonObject().put("balance", from.getBalance() - transaction.getAmount()));
         final JsonObject targetBalance = new JsonObject().put("$set", new JsonObject().put("balance", sum));
@@ -223,6 +218,25 @@ public class TransactionServiceMongo extends AbstractRepository {
                 Promise.failedPromise(ar1.cause());
             }
         });
+    }
+
+    /**
+     * Amount (rounded) of money to top up wallet with, after currency convertation.
+     * @param transaction Transaction details.
+     * @param from source Account.
+     * @param to target Account.
+     * @return double
+     */
+    @NonNull
+    private Double topUpSum(@NonNull Transaction transaction, @NonNull Account from, @NonNull Account to) {
+        final double sum;
+        if (!from.getCurrency().equals(to.getCurrency())) {
+            sum = Math.round(EWalletHandler.convert(transaction.getAmount(), from.getCurrency(), to.getCurrency())) + to
+                    .getBalance();
+        } else {
+            sum = Math.round(transaction.getAmount() + to.getBalance());
+        }
+        return sum;
     }
 }
 
