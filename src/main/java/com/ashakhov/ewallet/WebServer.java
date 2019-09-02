@@ -50,6 +50,9 @@ public class WebServer extends AbstractVerticle {
                 routerFactory.addHandlerByOperationId("getTransactions", transactionServiceMongo::searchAll);
 
                 final Router router = routerFactory.getRouter();
+
+                router.get("/api/*").handler(rc -> rc.response().end("Welcome to ewallet"));
+
                 // Error handlers.
                 final DefaultExceptionResolver exceptionResolver = DefaultExceptionResolver.getInstance(router);
                 exceptionResolver.resolveBadRequestException();
@@ -65,7 +68,6 @@ public class WebServer extends AbstractVerticle {
                                 promise.fail(result.cause());
                             }
                         });
-
             }
         });
     }
