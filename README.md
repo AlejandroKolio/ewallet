@@ -1,4 +1,4 @@
-#### E-Wallet Service based on Vert.x.
+#### Revolut task. E-Wallet Service based on Vert.x.
 
 Is a RESTful API for money transfers between accounts.
 Service includes internal currency rates and convertation between currencies.
