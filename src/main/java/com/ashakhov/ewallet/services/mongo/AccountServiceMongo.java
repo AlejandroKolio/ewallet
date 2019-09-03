@@ -45,8 +45,8 @@ public class AccountServiceMongo extends AbstractRepository {
                 final Optional<Account> account = response.result()
                         .stream()
                         .map(Account::new)
-                        .filter(acc -> acc.getUsername().equals(accountToCreate.getUsername()))
-                        .filter(acc -> acc.getCurrency().equals(accountToCreate.getCurrency()))
+                        .filter(acc -> acc.getUsername().equals(accountToCreate.getUsername()) &&
+                                acc.getCurrency().equals(accountToCreate.getCurrency()))
                         .findAny();
                 if (account.isPresent()) {
                     log.warn("Account exsists: {}", account.get());
