@@ -14,7 +14,7 @@
         <vertx.version>3.8.0</vertx.version>
         <faker.version>1.0.1</faker.version>
         <junit5.version>5.5.1</junit5.version>
-        <apache.version>4.5.9</apache.version>
+        <apache.version>4.5.13</apache.version>
         <lombok.version>1.18.8</lombok.version>
         <logger.version>1.7.28</logger.version>
         <assertj.version>3.13.1</assertj.version>
